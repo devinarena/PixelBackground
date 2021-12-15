@@ -1,0 +1,22 @@
+.App {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--background-color);
+}
+
+.App h1 {
+  font-size: 2rem;
+  text-align: center;
+  color: var(--text-color);
+}
+
+.App p {
+  font-size: 1.25rem;
+  text-align: center;
+  color: var(--text-color);
+}
+

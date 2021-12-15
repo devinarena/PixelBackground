@@ -18,6 +18,9 @@ const App = () => {
       setMessage(data.message);
       setProgress(data.progress);
     });
+    ipcRenderer.on('settings', (event, data) => {
+      setMessage('Successfully loaded settings')
+    });
   }, []);
 
   const submit = (e, save, subreddits, saveDirectory, numberOfPosts, pixelation, from) => {
@@ -36,7 +39,7 @@ const App = () => {
     <div className='App'>
       <h1>Pixel Background Generator</h1>
       <p>Pixelates pictures from Reddit.</p>
-      <EntryForm submit={submit} message={message} progress={progress} />
+      <EntryForm submit={submit} renderer={ipcRenderer} message={message} progress={progress} />
     </div>
   );
 };

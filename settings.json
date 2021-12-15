@@ -1,0 +1,8 @@
+{
+    "saveMode": true,
+    "subreddits": "EarthPorn",
+    "saveDirectory": "./posts",
+    "numberOfPosts": 6,
+    "pixelation": 10,
+    "from": "new"
+}

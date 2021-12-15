@@ -1,5 +1,6 @@
-import { Fragment, useState } from 'react';
 import './EntryForm.css';
+import { Fragment, useEffect, useState } from 'react';
+const { ipcRenderer } = window.require('electron');
 
 /**
 * @file EntryForm.js
@@ -16,6 +17,28 @@ const EntryForm = (props) => {
     const [save, setSave] = useState(false);
     const [pixelation, setPixelation] = useState(10);
     const [from, setFrom] = useState("new");
+
+    useEffect(() => {
+        ipcRenderer.on('settings', (event, data) => {
+            console.log(data);
+            setSubreddits(data.subreddits);
+            setSaveDirectory(data.saveDirectory);
+            setNumberOfPosts(data.numberOfPosts);
+            setSave(data.saveMode);
+            setPixelation(data.pixelation);
+            setFrom(data.from);
+        });
+        ipcRenderer.on('requestSettings', (event, data) => {
+            ipcRenderer.send('retrieveSettings', {
+                subreddits,
+                saveDirectory,
+                numberOfPosts,
+                save,
+                pixelation,
+                from
+            });
+        });
+    }, [subreddits, saveDirectory, numberOfPosts, save, pixelation, from]);
 
     return (
         <form className='EntryForm' onSubmit={e =>
@@ -51,7 +74,7 @@ const EntryForm = (props) => {
                             Number of Posts (max 50)
                         </label>
                         <input type='number' name='subreddits' value={numberOfPosts}
-                            onChange={e => setNumberOfPosts(parseInt(e.target.value))} min={1} max={50} required />
+                            onChange={e => setNumberOfPosts(parseInt(e.target.value) || numberOfPosts)} min={1} max={50} required />
                     </Fragment>
                 }
                 <label htmlFor='saveDir'>
@@ -62,7 +85,7 @@ const EntryForm = (props) => {
                     Pixelation
                 </label>
                 <input type='number' name='pixelation' value={pixelation}
-                    onChange={e => setPixelation(parseInt(e.target.value))} min={0} required />
+                    onChange={e => setPixelation(parseInt(e.target.value) || pixelation)} min={0} required />
                 <label htmlFor='options'>
                     Grab From
                 </label>

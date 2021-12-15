@@ -51,6 +51,6 @@ const setBackground = async (file) => {
 };
 
 module.exports = {
-    pixelate: pixelate,
-    setBackground: setBackground
+    pixelate,
+    setBackground
 };

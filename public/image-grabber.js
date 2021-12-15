@@ -120,6 +120,6 @@ const downloadImages = async (dir, posts) => {
 };
 
 module.exports = {
-    grabPosts: grabPosts,
-    downloadImages: downloadImages
+    grabPosts,
+    downloadImages
 };

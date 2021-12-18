@@ -1,10 +1,5 @@
 const fs = require('fs');
-// "saveMode": true,
-// "subreddits": "EarthPorn",
-// "saveDirectory": "./posts",
-// "numberOfPosts": 6,
-// "pixelation": 10,
-// "from": "new"
+const path = require('path');
 
 /**
 * @file settings.js
@@ -17,7 +12,7 @@ const fs = require('fs');
 let settings = {
     saveMode: true,
     subreddits: "EarthPorn",
-    saveDirectory: "./posts",
+    saveDirectory: path.join(require('os').homedir(), 'PixelBackgroundPictures'),
     numberOfPosts: 5,
     pixelation: 10,
     from: "new"
@@ -34,15 +29,19 @@ const loadSettings = () => {
             settings = JSON.parse(raw);
         } else {
             console.log('settings.json does not exist, generating...');
-            fs.writeFileSync('./settings.json', settings, err => {
+            fs.writeFileSync('./settings.json', JSON.stringify(settings), err => {
                 if (err)
                     console.log(err);
             });
         }
     } catch (err) {
-        console.log(err);
+        console.log('Failed to load settings, it\'s likely corrupted, saving default settings');
+        fs.writeFileSync('./settings.json', JSON.stringify(settings), err => {
+            if (err)
+                console.log(err);
+        });
+        loadSettings();
     }
-    console.log(settings);
 };
 
 /**

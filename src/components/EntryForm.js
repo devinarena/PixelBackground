@@ -11,38 +11,53 @@ const { ipcRenderer } = window.require('electron');
 
 const EntryForm = (props) => {
 
-    const [subreddits, setSubreddits] = useState('EarthPorn');
-    const [saveDirectory, setSaveDirectory] = useState('./posts');
-    const [numberOfPosts, setNumberOfPosts] = useState(1);
+    const [subreddits, setSubreddits] = useState('');
+    const [saveDirectory, setSaveDirectory] = useState('');
+    const [numberOfPosts, setNumberOfPosts] = useState('');
     const [save, setSave] = useState(false);
-    const [pixelation, setPixelation] = useState(10);
+    const [pixelation, setPixelation] = useState('');
     const [from, setFrom] = useState("new");
 
+    /**
+     * Handler for loading settings
+     */
     useEffect(() => {
         ipcRenderer.on('settings', (event, data) => {
-            console.log(data);
             setSubreddits(data.subreddits);
             setSaveDirectory(data.saveDirectory);
             setNumberOfPosts(data.numberOfPosts);
             setSave(data.saveMode);
             setPixelation(data.pixelation);
+            props.setPixelSize(parseInt(data.pixelation) || 1)
             setFrom(data.from);
         });
-        ipcRenderer.on('requestSettings', (event, data) => {
+    }, []);
+
+    /**
+     * Handler for saving settings, sends settings back to electron
+     */
+    useEffect(() => {
+        const sendSettings = () => {
             ipcRenderer.send('retrieveSettings', {
                 subreddits,
                 saveDirectory,
-                numberOfPosts,
+                numberOfPosts: parseInt(numberOfPosts) || 1,
                 save,
-                pixelation,
+                pixelation: parseInt(pixelation) || 0,
                 from
             });
-        });
+        };
+
+        ipcRenderer.on('requestSettings', sendSettings);
+
+        return () => {
+            ipcRenderer.removeListener('requestSettings', sendSettings);
+        };
     }, [subreddits, saveDirectory, numberOfPosts, save, pixelation, from]);
 
     return (
         <form className='EntryForm' onSubmit={e =>
-            props.submit(e, save, subreddits, saveDirectory, numberOfPosts, pixelation, from)
+            props.submit(e, save, subreddits, saveDirectory, parseInt(numberOfPosts) || 1, parseInt(pixelation) || 0, from)
         }>
             <div className='Mode'>
                 <label>
@@ -73,8 +88,8 @@ const EntryForm = (props) => {
                         <label htmlFor='numPosts'>
                             Number of Posts (max 50)
                         </label>
-                        <input type='number' name='subreddits' value={numberOfPosts}
-                            onChange={e => setNumberOfPosts(parseInt(e.target.value) || numberOfPosts)} min={1} max={50} required />
+                        <input type='number' name='numPosts' value={numberOfPosts}
+                            onChange={e => setNumberOfPosts(e.target.value)} min={1} max={50} required />
                     </Fragment>
                 }
                 <label htmlFor='saveDir'>
@@ -85,7 +100,8 @@ const EntryForm = (props) => {
                     Pixelation
                 </label>
                 <input type='number' name='pixelation' value={pixelation}
-                    onChange={e => setPixelation(parseInt(e.target.value) || pixelation)} min={0} required />
+                    onChange={e => setPixelation(e.target.value)}
+                    onBlur={() => props.setPixelSize(parseInt(pixelation) || 1)} min={0} max={100} required />
                 <label htmlFor='options'>
                     Grab From
                 </label>

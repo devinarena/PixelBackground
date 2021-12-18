@@ -1,4 +1,5 @@
 const path = require('path');
+const url = require('url');
 
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const isDev = require('electron-is-dev');
@@ -20,6 +21,7 @@ const createWindow = () => {
     win = new BrowserWindow({
         width: DEFAULT_WIDTH,
         height: DEFAULT_HEIGHT,
+        icon: path.join(app.getAppPath(), 'build/icon.png'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -29,14 +31,15 @@ const createWindow = () => {
     win.setMenu(Menu.buildFromTemplate(createMenu()));
 
     // Load content into the electron window, dev and production builds will have different URLs
-    win.loadURL(
-        isDev
-            ? 'http://localhost:3000'
-            : `file://${path.join(__dirname, '../build/index.html')}`
-    );
+    win.loadURL(url.format({
+        pathname: isDev ? 'localhost:3000' : path.join(__dirname, 'index.html'),
+        protocol: isDev ? 'http:' : 'file:',
+        slashes: true
+    }));
+
     // Open dev tools for debugging
     // if (isDev) {
-    //     win.webContents.openDevTools({ mode: 'detach' });
+    // win.webContents.openDevTools({ mode: 'detach' });
     // }
 };
 
@@ -50,6 +53,7 @@ const createMenu = () => {
             submenu: [
                 {
                     label: 'Reload Settings',
+                    accelerator: process.platform === 'darwin' ? 'Cmd+R' : 'Ctrl+R',
                     click() {
                         loadSettings();
                         // send to React renderer
@@ -58,14 +62,17 @@ const createMenu = () => {
                 },
                 {
                     label: 'Save Settings',
+                    accelerator: process.platform === 'darwin' ? 'Cmd+S' : 'Ctrl+S',
                     click() {
                         win.webContents.send('requestSettings');
                     }
                 },
                 process.platform === 'darwin' ? {
-                    role: 'close'
+                    role: 'close',
+                    accelerator: 'Cmd+Q',
                 } : {
-                    role: 'quit'
+                    role: 'quit',
+                    accelerator: 'Ctrl+Q',
                 }
             ]
         }
@@ -75,7 +82,7 @@ const createMenu = () => {
 // callbacks for when the program is closed or opened
 
 app.whenReady().then(createWindow).then(() => {
-    win.webContents.on('did-finish-load', () => {
+    win.webContents.once('did-finish-load', () => {
         loadSettings();
         // send to React renderer
         win.webContents.send('settings', getSettings());
@@ -102,7 +109,6 @@ app.on('activate', () => {
  * Runs when the main form is submitted
  */
 ipcMain.on('submit', async (event, data) => {
-    console.log(settings);
     // initial message
     event.reply('message', {
         progress: 0,
@@ -121,26 +127,35 @@ ipcMain.on('submit', async (event, data) => {
     // download the images from the acquired URLs
     const files = await downloadImages(data.saveDirectory, posts);
     if (files.length == 0) {
-        event.reply('error', 'Failed to save images to the directory, does it exist?');
+        event.reply('error', `Failed to save images to ${data.saveDirectory}, does it exist?`);
         return;
     }
     event.reply('message', {
         progress: 2,
         message: `Downloaded ${files.length} images, beginning pixelation`
     });
-    // pixelate the files we grabbed
-    if (!await pixelate(files, data.pixelation)) {
-        event.reply('error', 'Failed to pixelate some files, the files may be deleted or corrupted.');
-        return;
+    // pixelate the files we grabbed using sharp
+    if (data.pixelation !== 0) {
+        for (const index in files) {
+            const file = files[parseInt(index)];
+            if (!await pixelate(file, data.pixelation)) {
+                event.reply('error', 'Failed to pixelate some files, the files may be deleted or corrupted.');
+                return;
+            }
+            event.reply('message', {
+                progress: 2,
+                message: `Pixelated ${file} (${parseInt(index) + 1}/${files.length})`
+            });
+        }
+        event.reply('message', {
+            progress: 3,
+            message: `Pixelated ${files.length} images, finalizing...`
+        });
     }
-    event.reply('message', {
-        progress: 3,
-        message: `Pixelates ${files.length} images, finalizing...`
-    });
     // if we're in background mode, set the last file (should be only) as the wallpaper 
     if (!data.save) {
         if (!await setBackground(files.at(-1))) {
-            event.reply('error', 'Failed to pixelate some files, the files may be deleted or corrupted.');
+            event.reply('error', 'Failed change desktop wallpaper!');
             return;
         }
         event.reply('message', {

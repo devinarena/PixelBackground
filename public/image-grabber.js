@@ -26,6 +26,7 @@ const grabPosts = async (subreddits, from, count) => {
 
     // if we're given a list, grab count from every sub, otherwise grab count from one sub
     if (!subreddits.includes(',')) {
+        // fetch JSON from https://reddit.com/r/{subreddit}/{new/top/hot/controversial}.json
         const res = await fetch(`${BASE_URL}${subreddits.trim()}/${from}.json`);
         if (res.error) {
             console.log(`failed to get posts from ${subreddits.trim()}`);
@@ -36,6 +37,7 @@ const grabPosts = async (subreddits, from, count) => {
         for (let sub of subreddits.split(',')) {
             sub = sub.trim();
 
+            // fetch JSON from https://reddit.com/r/{subreddit}/{new/top/hot/controversial}.json
             const res = await fetch(`${BASE_URL}${sub}/${from}.json`);
             if (res.error) {
                 console.log(`failed to get posts from ${sub}`);
@@ -78,22 +80,33 @@ const readJSON = async (res, count, posts) => {
 const downloadImages = async (dir, posts) => {
     const files = [];
 
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir);
+
     let index = 0;
 
     for (const url of posts) {
 
         const ext = url.split('.').at(-1);
 
+        // pull the image from the reddit url
+
         const response = await Axios({
             url,
             method: 'GET',
             responseType: 'stream'
         });
+        
+        // create the file name from todays date and the current index
 
-        const date = Date.now().toString();
-        const fp = path.resolve(dir, `${date}-${index}.${ext}`);
+        const tokens = new Date().toLocaleString('en-US').split(',');
+        const day = tokens[0].trim().replaceAll('/', '-');
+        const time = tokens[1].trim().split(' ')[0].replaceAll(':', '-');
+        const fp = path.resolve(dir, `${day}-${time}-${index}.${ext}`);
 
         index++;
+
+        // write the contents of the request to the file (download the image)
 
         const write = fs.createWriteStream(fp);
 
@@ -111,6 +124,8 @@ const downloadImages = async (dir, posts) => {
         }).catch(err => {
             console.log(err);
         });
+
+        // push the filepath to the list of files (for pixelation)
 
         if (file)
             files.push(file);

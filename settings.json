@@ -1,8 +1,1 @@
-{
-    "saveMode": true,
-    "subreddits": "EarthPorn",
-    "saveDirectory": "./posts",
-    "numberOfPosts": 6,
-    "pixelation": 10,
-    "from": "new"
-}
+{"saveMode":true,"subreddits":"EarthPorn","saveDirectory":"C:\\Users\\d3v1n\\PixelBackgroundPictures","numberOfPosts":5,"pixelation":200,"from":"new"}

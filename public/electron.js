@@ -8,8 +8,8 @@ const { grabPosts, downloadImages } = require('./image-grabber.js');
 const { pixelate, setBackground } = require('./pixelator.js');
 const { loadSettings, getSettings, setSettings, saveSettings } = require('./settings.js');
 
-const DEFAULT_WIDTH = 900;
-const DEFAULT_HEIGHT = 800;
+const DEFAULT_WIDTH = 960
+const DEFAULT_HEIGHT = 540
 
 let win;
 
